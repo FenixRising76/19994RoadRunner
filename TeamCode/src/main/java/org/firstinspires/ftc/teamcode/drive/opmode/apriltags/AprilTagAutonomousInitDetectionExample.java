@@ -19,7 +19,7 @@
  * SOFTWARE.
  */
 
-package org.firstinspires.ftc.teamcode.apriltags;
+package org.firstinspires.ftc.teamcode.drive.opmode.apriltags;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -29,39 +29,13 @@ import org.openftc.apriltag.AprilTagDetection;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
-
-
-import static org.firstinspires.ftc.teamcode.drive.DriveConstants.MAX_RPM;
-import static org.firstinspires.ftc.teamcode.drive.DriveConstants.RUN_USING_ENCODER;
-import static org.firstinspires.ftc.teamcode.drive.DriveConstants.rpmToVelocity;
-
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.roadrunner.geometry.Pose2d;
-import com.acmerobotics.roadrunner.util.NanoClock;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.util.RobotLog;
-
-import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.internal.system.Misc;
-import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
-import org.firstinspires.ftc.teamcode.util.LoggingUtil;
-import org.firstinspires.ftc.teamcode.util.RegressionUtil;
+import org.openftc.easyopencv.OpenCvInternalCamera;
 
 import java.util.ArrayList;
-import java.util.List;
 
-//RR
-import com.acmerobotics.roadrunner.geometry.Pose2d;
-
-import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
-
-@TeleOp //Cng to Auto?
+@TeleOp
 public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
 {
-
         OpenCvCamera camera;
         AprilTagDetectionPipeline aprilTagDetectionPipeline;
 
@@ -79,10 +53,7 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
         // UNITS ARE METERS
         double tagsize = 0.166;
 
-// Tag ID 1,2,3 from the 36h11 family
-
-        //Delete this Later
-
+        // Tag ID 1,2,3 from the 36h11 family
         int LEFT = 1;
         int MIDDLE = 2;
         int RIGHT = 3;
@@ -90,16 +61,8 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
         AprilTagDetection tagOfInterest = null;
 
         @Override
-        //Added throws InterruptedException, remove if there are issues
-        public void runOpMode() throws InterruptedException
+        public void runOpMode()
         {
-
-
-
-
-
-
-
                 int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
                 camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
                 aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
@@ -204,31 +167,14 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
                 }
 
                 /* Actually do something useful */
-
-                //Signal One / Left Section
-                if(tagOfInterest == null || tagOfInterest.id == LEFT){
-
-//                        Trajectory trajectorySplineRed = drive.trajectoryBuilder(new Pose2d())
-//                                .splineTo(new Vector2d(-36.5, -23), Math.toRadians(90))
-//                                .splineTo(new Vector2d(-61.5, -11.6), Math.toRadians(180))
-//                                .build();
-//
-//                       drive.followTrajectory(trajectorySplineRed);
-
-                } else
-                      // Signal Two / Middle Section
-                        if (tagOfInterest.id == MIDDLE) {
-
-                        //Telementry
-
-
-                } else
-
-                        // Signal Three / Right Section
-                {
-
-                        //Telementry
-
+                if(tagOfInterest == null){
+                        //default trajectory here if preferred
+                }else if(tagOfInterest.id == LEFT){
+                        //left trajectory
+                }else if(tagOfInterest.id == MIDDLE){
+                        //middle trajectory
+                }else{
+                        //right trajectory
                 }
 
 
