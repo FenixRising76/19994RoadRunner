@@ -31,11 +31,38 @@ import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvInternalCamera;
 
-import java.util.ArrayList;
+//RR Imports
 
-@TeleOp
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
+
+
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import java.util.ArrayList;
+import java.util.Vector;
+
+
+@Autonomous(group = "auton", name = "RT Blue Side & RT Red Side")
+
 public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
 {
+
+        private DcMotor arm;
+        private Servo leftHook;
+        boolean FirstTime = true;
+
+        ElapsedTime time = null;
+
         OpenCvCamera camera;
         AprilTagDetectionPipeline aprilTagDetectionPipeline;
 
@@ -61,24 +88,36 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
         AprilTagDetection tagOfInterest = null;
 
         @Override
-        public void runOpMode()
-        {
+        public void runOpMode() {
+                //RR Init
+                arm = hardwareMap.dcMotor.get("arm");
+                arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+                time = new ElapsedTime();
+
+                leftHook = hardwareMap.servo.get("leftHook");
+
+                SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+
+                drive.setPoseEstimate(new Pose2d(-36, -64.5, Math.toRadians(90)));
+
+
+                //AprilTagsCV Init
                 int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
                 camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
                 aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
 
                 camera.setPipeline(aprilTagDetectionPipeline);
-                camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
-                {
+                camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener() {
                         @Override
-                        public void onOpened()
-                        {
-                                camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
+                        public void onOpened() {
+                                camera.startStreaming(800, 448, OpenCvCameraRotation.UPRIGHT);
                         }
 
                         @Override
-                        public void onError(int errorCode)
-                        {
+                        public void onError(int errorCode) {
 
                         }
                 });
@@ -89,55 +128,40 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
                  * The INIT-loop:
                  * This REPLACES waitForStart!
                  */
-                while (!isStarted() && !isStopRequested())
-                {
+                while (!isStarted() && !isStopRequested()) {
                         ArrayList<AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
 
-                        if(currentDetections.size() != 0)
-                        {
+                        if (currentDetections.size() != 0) {
                                 boolean tagFound = false;
 
-                                for(AprilTagDetection tag : currentDetections)
-                                {
-                                        if(tag.id == LEFT || tag.id == MIDDLE || tag.id == RIGHT)
-                                        {
+                                for (AprilTagDetection tag : currentDetections) {
+                                        if (tag.id == LEFT || tag.id == MIDDLE || tag.id == RIGHT) {
                                                 tagOfInterest = tag;
                                                 tagFound = true;
                                                 break;
                                         }
                                 }
 
-                                if(tagFound)
-                                {
+                                if (tagFound) {
                                         telemetry.addLine("Tag of interest is in sight!\n\nLocation data:");
                                         tagToTelemetry(tagOfInterest);
-                                }
-                                else
-                                {
+                                } else {
                                         telemetry.addLine("Don't see tag of interest :(");
 
-                                        if(tagOfInterest == null)
-                                        {
+                                        if (tagOfInterest == null) {
                                                 telemetry.addLine("(The tag has never been seen)");
-                                        }
-                                        else
-                                        {
+                                        } else {
                                                 telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
                                                 tagToTelemetry(tagOfInterest);
                                         }
                                 }
 
-                        }
-                        else
-                        {
+                        } else {
                                 telemetry.addLine("Don't see tag of interest :(");
 
-                                if(tagOfInterest == null)
-                                {
+                                if (tagOfInterest == null) {
                                         telemetry.addLine("(The tag has never been seen)");
-                                }
-                                else
-                                {
+                                } else {
                                         telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
                                         tagToTelemetry(tagOfInterest);
                                 }
@@ -152,34 +176,338 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
                  * The START command just came in: now work off the latest snapshot acquired
                  * during the init loop.
                  */
+              //Starting Arm Movement
+                time.reset();
+                leftHook.setPosition(0.04);
+
+                while(time.milliseconds()<500){
+
+                }
+
+                arm.setTargetPosition(500);
+                arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                ((DcMotorEx) arm).setVelocity(750);
 
                 /* Update the telemetry */
-                if(tagOfInterest != null)
-                {
+                if (tagOfInterest != null) {
                         telemetry.addLine("Tag snapshot:\n");
                         tagToTelemetry(tagOfInterest);
                         telemetry.update();
-                }
-                else
-                {
+                } else {
                         telemetry.addLine("No tag snapshot available, it was never sighted during the init loop :(");
                         telemetry.update();
                 }
 
-                /* Actually do something useful */
-                if(tagOfInterest == null){
-                        //default trajectory here if preferred
-                }else if(tagOfInterest.id == LEFT){
-                        //left trajectory
-                }else if(tagOfInterest.id == MIDDLE){
-                        //middle trajectory
-                }else{
-                        //right trajectory
+
+                drive.setPoseEstimate(new Pose2d(-36,-64.5,Math.toRadians(90)));
+
+                 if (tagOfInterest == null || tagOfInterest.id == LEFT) {
+                         time.reset();
+                         while(time.milliseconds()<2000){
+
+                         }
+                         //FirstMove
+                 Trajectory FirstMove = drive.trajectoryBuilder(new Pose2d(-36,-64.5,Math.toRadians(90)))
+                         .lineTo(new Vector2d(-13, -64.5))
+
+
+                         .build();
+
+                 drive.followTrajectory(FirstMove);
+
+                         while(time.milliseconds()<3000){
+
+                         }
+
+                 Trajectory SecondMove = drive.trajectoryBuilder(new Pose2d(-13,-64.5,Math.toRadians(90)))
+                         .lineTo(new Vector2d(-13, -24))
+                         .build();
+
+                 drive.followTrajectory(SecondMove);
+
+                         while(time.milliseconds()<5000){
+
+                         }
+
+                      //Arm Movement
+                         leftHook.setPosition(0.04);
+                         arm.setTargetPosition(2250);
+                         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                         ((DcMotorEx) arm).setVelocity(750);
+
+                         while(time.milliseconds()<8500){
+
+                         }
+
+                         drive.turn(Math.toRadians(-90));
+
+                         while(time.milliseconds()<9500){
+
+                         }
+
+
+                 Trajectory TurnUwU = drive.trajectoryBuilder(new Pose2d(-13,-24), Math.toRadians(180))
+                         .lineTo(new Vector2d(-5,-24))
+                         .build();
+
+                         drive.followTrajectory(TurnUwU);
+
+                         while(time.milliseconds()<11500){
+
+                         }
+
+
+                         //Arm Movement
+                  arm.setTargetPosition(400);
+                  arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                  ((DcMotorEx) arm).setVelocity(250);
+                  leftHook.setPosition(0.2);
+                  arm.setTargetPosition(1650);
+                  arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                  ((DcMotorEx) arm).setVelocity(250);
+
+                  while(time.milliseconds()<21000){
+
+                  }
+
+
+
+
+
+
+//Parking Code LEFT_SIDE (COPY PASTE EVERYTHING ABOVE)
+                Trajectory FifthMove = drive.trajectoryBuilder(new Pose2d(-5,-24), Math.toRadians(180))
+                        .splineToConstantHeading(new Vector2d(-14,-11), Math.toRadians(180))
+                        .build();
+
+                drive.followTrajectory(FifthMove);
+
+                while(time.milliseconds()<22500){
+
+                }
+
+                Trajectory SixthMove = drive.trajectoryBuilder(new Pose2d(-14,-11), Math.toRadians(180))
+                        .lineTo(new Vector2d(-58,-11))
+                        .build();
+
+                drive.followTrajectory(SixthMove);
+
+                 while(time.milliseconds()<25000){
+
+                 }
+
+                Trajectory SeventhMove = drive.trajectoryBuilder(new Pose2d(-58,-11), Math.toRadians(180))
+                        .lineTo(new Vector2d(-58,-30))
+                        .build();
+
+                drive.followTrajectory(SeventhMove);
+
+
+
+
+
+                } else if (tagOfInterest.id == MIDDLE) {
+
+
+
+                         time.reset();
+                         while(time.milliseconds()<2000){
+
+                         }
+                         //FirstMove
+                         Trajectory FirstMove = drive.trajectoryBuilder(new Pose2d(-36,-64.5,Math.toRadians(90)))
+                                 .lineTo(new Vector2d(-13, -64.5))
+
+
+                                 .build();
+
+                         drive.followTrajectory(FirstMove);
+
+                         while(time.milliseconds()<3000){
+
+                         }
+
+                         Trajectory SecondMove = drive.trajectoryBuilder(new Pose2d(-13,-64.5,Math.toRadians(90)))
+                                 .lineTo(new Vector2d(-13, -24))
+                                 .build();
+
+                         drive.followTrajectory(SecondMove);
+
+                         while(time.milliseconds()<5000){
+
+                         }
+
+                         //Arm Movement
+                         leftHook.setPosition(0.04);
+                         arm.setTargetPosition(2250);
+                         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                         ((DcMotorEx) arm).setVelocity(750);
+
+                         while(time.milliseconds()<8500){
+
+                         }
+
+                         drive.turn(Math.toRadians(-90));
+
+                         while(time.milliseconds()<9500){
+
+                         }
+
+
+                         Trajectory TurnUwU = drive.trajectoryBuilder(new Pose2d(-13,-24), Math.toRadians(180))
+                                 .lineTo(new Vector2d(-5,-24))
+                                 .build();
+
+                         drive.followTrajectory(TurnUwU);
+
+                         while(time.milliseconds()<11500){
+
+                         }
+
+
+                         //Arm Movement
+                         arm.setTargetPosition(400);
+                         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                         ((DcMotorEx) arm).setVelocity(250);
+                         leftHook.setPosition(0.2);
+                         arm.setTargetPosition(1650);
+                         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                         ((DcMotorEx) arm).setVelocity(250);
+
+                         while(time.milliseconds()<21000){
+
+                         }
+
+
+
+
+
+//Parking Code MIDDLE_SIDE (COPY PASTE EVERYTHING ABOVE)
+                Trajectory FifthMove = drive.trajectoryBuilder(new Pose2d(-5,-24), Math.toRadians(180))
+                        .splineToConstantHeading(new Vector2d(-14,-11), Math.toRadians(180))
+                        .build();
+
+                drive.followTrajectory(FifthMove);
+
+                while(time.milliseconds()<22500){
+
+                }
+
+                Trajectory SixthMove = drive.trajectoryBuilder(new Pose2d(-14,-11), Math.toRadians(180))
+                        .lineTo(new Vector2d(-35,-11))
+                        .build();
+
+                drive.followTrajectory(SixthMove);
+
+
+
+
+
+                } else {
+
+
+                         time.reset();
+                         while(time.milliseconds()<2000){
+
+                         }
+                         //FirstMove
+                         Trajectory FirstMove = drive.trajectoryBuilder(new Pose2d(-36,-64.5,Math.toRadians(90)))
+                                 .lineTo(new Vector2d(-13, -64.5))
+
+
+                                 .build();
+
+                         drive.followTrajectory(FirstMove);
+
+                         while(time.milliseconds()<3000){
+
+                         }
+
+                         Trajectory SecondMove = drive.trajectoryBuilder(new Pose2d(-13,-64.5,Math.toRadians(90)))
+                                 .lineTo(new Vector2d(-13, -24))
+                                 .build();
+
+                         drive.followTrajectory(SecondMove);
+
+                         while(time.milliseconds()<5000){
+
+                         }
+
+                         //Arm Movement
+                         leftHook.setPosition(0.04);
+                         arm.setTargetPosition(2250);
+                         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                         ((DcMotorEx) arm).setVelocity(750);
+
+                         while(time.milliseconds()<8500){
+
+                         }
+
+                         drive.turn(Math.toRadians(-90));
+
+                         while(time.milliseconds()<9500){
+
+                         }
+
+
+                         Trajectory TurnUwU = drive.trajectoryBuilder(new Pose2d(-13,-24), Math.toRadians(180))
+                                 .lineTo(new Vector2d(-5,-24))
+                                 .build();
+
+                         drive.followTrajectory(TurnUwU);
+
+                         while(time.milliseconds()<11500){
+
+                         }
+
+
+                         //Arm Movement
+                         arm.setTargetPosition(1500);
+                         arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                         ((DcMotorEx) arm).setVelocity(250);
+                         leftHook.setPosition(0.2);
+
+                         while(time.milliseconds()<13000){
+
+                         }
+
+                     leftHook.setPosition(0.2);
+
+                     while(time.milliseconds()<13500){
+
+                     }
+
+                     arm.setTargetPosition(2250);
+                     arm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                     ((DcMotorEx) arm).setVelocity(500);
+
+                     while(time.milliseconds()<15500){
+
+                     }
+
+
+//Parking Code RIGHT_SIDE (COPY PASTE EVERYTHING ABOVE)
+                Trajectory FifthMove = drive.trajectoryBuilder(new Pose2d(-5,-24), Math.toRadians(180))
+                        .splineToConstantHeading(new Vector2d(-14,-11), Math.toRadians(180))
+                        .build();
+
+                drive.followTrajectory(FifthMove);
+
+
+
+
+
+
+
                 }
 
 
+
+
                 /* You wouldn't have this in your autonomous, this is just to prevent the sample from ending */
-                while (opModeIsActive()) {sleep(20);}
+                while (opModeIsActive()) {
+                        sleep(20);
+                }
         }
 
         void tagToTelemetry(AprilTagDetection detection)
@@ -193,3 +521,4 @@ public class AprilTagAutonomousInitDetectionExample extends LinearOpMode
                 telemetry.addLine(String.format("Rotation Roll: %.2f degrees", Math.toDegrees(detection.pose.roll)));
         }
 }
+
